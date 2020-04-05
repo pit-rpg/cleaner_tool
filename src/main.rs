@@ -21,10 +21,7 @@ fn clear_rust_project(dir: &Path, remove: bool) -> bool {
 	let target = dir.join("target");
 
 	if toml.is_file() && lock.is_file() && target.is_dir() {
-		println!("{:?}", target);
-		if remove {
-			remove_dir_all(target).expect("cant remove");
-		}
+		cl_remove_dir(remove, &target);
 		return true;
 	}
 
@@ -36,10 +33,7 @@ fn clear_node_project(dir: &Path, remove: bool) -> bool {
 	let node_modules = dir.join("node_modules");
 
 	if package.is_file() && node_modules.is_dir() {
-		println!("{:?}", node_modules);
-		if remove {
-			remove_dir_all(node_modules).unwrap();
-		}
+		cl_remove_dir(remove, &node_modules);
 		return true;
 	}
 
@@ -50,10 +44,7 @@ fn remove_blend_file(file: &Path, remove: bool) -> bool {
 	let file_name = file.file_name().unwrap().to_str().unwrap();
 
 	if file_name.ends_with(".blend1") || file_name.ends_with(".blend2") {
-		println!("{:?}", file);
-		if remove {
-			remove_file(file).unwrap();
-		}
+		cl_remove_file(remove, file);
 		return true;
 	}
 
@@ -81,6 +72,35 @@ fn visit_dir(dir: &Path, remove: bool) -> io::Result<()> {
 	Ok(())
 }
 
+fn cl_remove_dir(remove: bool, dir: &Path) {
+	if !dir.is_dir() {return}
+
+	println!("{:?}", dir);
+	if remove { remove_dir_all(dir).unwrap()}
+}
+
+fn cl_remove_file(remove: bool, file: &Path) {
+	if !file.is_file() {return}
+
+	println!("{:?}", file);
+	if remove {remove_file(file).unwrap()}
+}
+
+
+fn remove_local_dirs(remove: bool, home_dir: &Path) {
+	// Trash
+	let dir = dirs::data_local_dir().unwrap().join("Trash");
+	cl_remove_dir(remove, &dir);
+
+	// .cache
+	let dir = home_dir.join(".cache");
+	cl_remove_dir(remove, &dir);
+
+	// .cache
+	let dir = home_dir.join(".npm").join("_cacache");
+	cl_remove_dir(remove, &dir);
+}
+
 fn main() {
 	let matches = App::new("Cleaner Tool")
 		.version("0.1")
@@ -97,12 +117,7 @@ fn main() {
 
 	let my_home_dir = dirs::home_dir().expect("cant get home dir");
 
-	let trash = dirs::data_local_dir().unwrap().join("Trash");
-	println!("{:?}", trash);
-
-	if trash.is_dir() && remove {
-		remove_dir_all(trash).unwrap();
-	}
+	remove_local_dirs(remove, &my_home_dir);
 
 	visit_dir(&my_home_dir, remove).unwrap();
 }
